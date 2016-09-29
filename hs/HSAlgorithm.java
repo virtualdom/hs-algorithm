@@ -92,13 +92,101 @@ public class HSAlgorithm {
 
     @Override
     public void run () {
-      // process code goes here!
-      // use (readFrom/writeTo)Left,
-      // (readFrom/writeTo)Right, and
-      // (readFrom/writeTo)Master functions
-      // to do things!
-      // i.e. wait for the starting signal
-      // String startingSignal = readFromMaster();
+      //Set up variables
+      int phase = 0;
+      String[] StrArrayFromLeft, StrArrayFromRight;
+      String MessageForLeft = "",
+        MessageForRight = "",
+        ID = Integer.toString(this.id);
+
+      //First round to get started
+      readFromMaster();
+
+      MessageForLeft =  ID + " out " + Integer.toString(1);
+      MessageForRight = MessageForLeft;
+
+      writeToLeft(MessageForLeft);
+      writeToRight(MessageForRight);
+      writeToMaster("-1");
+
+      //Until Termination section
+      while(true)
+      {
+        readFromMaster();
+        MessageForLeft = "";
+        MessageForRight = "";
+        StrArrayFromLeft = readFromLeft().split(" ");
+        StrArrayFromRight = readFromRight().split(" ");
+
+        if(StrArrayFromLeft.length > 1 && StrArrayFromLeft[1].equals("l"))
+        {
+          writeToRight(StrArrayFromLeft[0] + " l ");
+          writeToMaster(StrArrayFromLeft[0]);
+          return;
+        }
+
+        if(StrArrayFromRight.length > 1 && StrArrayFromRight[1].equals("l"))
+        {
+          writeToLeft(StrArrayFromRight[0] + " l ");
+          writeToMaster(StrArrayFromRight[0]);
+          return;
+        }
+
+        if(StrArrayFromLeft.length > 1 && StrArrayFromLeft[1].equals("out"))
+        {
+          if(Integer.parseInt(StrArrayFromLeft[0]) < this.id && Integer.parseInt(StrArrayFromLeft[2]) > 1)
+          {
+            MessageForRight = StrArrayFromLeft[0] + " out " + (Integer.parseInt(StrArrayFromLeft[2])-1);
+          }
+          else if (Integer.parseInt(StrArrayFromLeft[0]) < this.id && Integer.parseInt(StrArrayFromLeft[2]) == 1)
+          {
+            MessageForLeft = StrArrayFromLeft[0] + " in ";
+          }
+          else if (Integer.parseInt(StrArrayFromLeft[0]) == this.id)
+          {
+            writeToRight(ID + " l ");
+            writeToLeft(ID + " l ");
+            writeToMaster(ID);
+            return;
+          }
+        }
+
+        if(StrArrayFromRight.length > 1 && StrArrayFromRight[1].equals("out"))
+        {
+          if(Integer.parseInt(StrArrayFromRight[0]) < this.id && Integer.parseInt(StrArrayFromRight[2]) > 1)
+          {
+            MessageForLeft = StrArrayFromRight[0] + " out " + (Integer.parseInt(StrArrayFromRight[2])-1);
+          }
+          else if (Integer.parseInt(StrArrayFromRight[0]) < this.id && Integer.parseInt(StrArrayFromRight[2]) == 1)
+          {
+            MessageForRight = StrArrayFromRight[0] + " in ";
+          }
+          else if (Integer.parseInt(StrArrayFromRight[0]) == this.id)
+          {
+            writeToRight(ID + " l ");
+            writeToLeft(ID + " l ");
+            writeToMaster(ID);
+            return;
+          }
+        }
+
+        if(StrArrayFromLeft.length > 1 && StrArrayFromLeft[1].equals("in") && Integer.parseInt(StrArrayFromLeft[0]) < this.id)
+          MessageForRight = StrArrayFromLeft[0] + " " + StrArrayFromLeft[1] + " ";
+
+        if(StrArrayFromRight.length > 1 && StrArrayFromRight[1].equals("in") && Integer.parseInt(StrArrayFromRight[0]) < this.id)
+          MessageForLeft = StrArrayFromRight[0] + " " + StrArrayFromRight[1] + " ";
+
+        if(StrArrayFromLeft.length > 1 && StrArrayFromRight.length > 1 && StrArrayFromLeft[0].equals(ID) && StrArrayFromRight[0].equals(ID))
+        {
+          phase++;
+          MessageForRight = ID + " out " + Math.pow(2, phase);
+          MessageForLeft = MessageForRight;
+        }
+
+        writeToRight(MessageForRight);
+        writeToLeft(MessageForLeft);
+        writeToMaster("-1");
+      }
     }
   }
 
