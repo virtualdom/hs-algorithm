@@ -42,7 +42,7 @@ public class HSDriver {
 
     HSAlgorithm hs = new HSAlgorithm(n, ids);
     hs.start();
-    // leader = hs.getLeaderId();
-    // System.out.println(leader + " is the elected leader.");
+    leader = hs.getLeaderId();
+    System.out.println(leader + " is the elected leader.");
   }
 }

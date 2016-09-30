@@ -118,16 +118,17 @@ public class HSAlgorithm {
         StrArrayFromLeft = readFromLeft().split(" ");
         StrArrayFromRight = readFromRight().split(" ");
 
+
         if(StrArrayFromLeft.length > 1 && StrArrayFromLeft[1].equals("l"))
         {
-          writeToRight(StrArrayFromLeft[0] + " l ");
+          writeToRight(StrArrayFromLeft[0] + " l 0");
           writeToMaster(StrArrayFromLeft[0]);
           return;
         }
 
         if(StrArrayFromRight.length > 1 && StrArrayFromRight[1].equals("l"))
         {
-          writeToLeft(StrArrayFromRight[0] + " l ");
+          writeToLeft(StrArrayFromRight[0] + " l 0");
           writeToMaster(StrArrayFromRight[0]);
           return;
         }
@@ -144,8 +145,8 @@ public class HSAlgorithm {
           }
           else if (Integer.parseInt(StrArrayFromLeft[0]) == this.id)
           {
-            writeToRight(ID + " l ");
-            writeToLeft(ID + " l ");
+            writeToRight(ID + " l 0");
+            writeToLeft(ID + " l 0");
             writeToMaster(ID);
             return;
           }
@@ -163,8 +164,8 @@ public class HSAlgorithm {
           }
           else if (Integer.parseInt(StrArrayFromRight[0]) == this.id)
           {
-            writeToRight(ID + " l ");
-            writeToLeft(ID + " l ");
+            writeToRight(ID + " l 0");
+            writeToLeft(ID + " l 0");
             writeToMaster(ID);
             return;
           }
@@ -179,7 +180,7 @@ public class HSAlgorithm {
         if(StrArrayFromLeft.length > 1 && StrArrayFromRight.length > 1 && StrArrayFromLeft[0].equals(ID) && StrArrayFromRight[0].equals(ID))
         {
           phase++;
-          MessageForRight = ID + " out " + Math.pow(2, phase);
+          MessageForRight = ID + " out " + (int) Math.pow(2, phase);
           MessageForLeft = MessageForRight;
         }
 
@@ -203,16 +204,41 @@ public class HSAlgorithm {
     for (int i = 0; i < n; i++) {
       leader[i] = -9999;
 
-      toLeft.add(new ArrayBlockingQueue<String>(1));
-      toRight.add(new ArrayBlockingQueue<String>(1));
+      toLeft.add(new ArrayBlockingQueue<String>(2));
+      toRight.add(new ArrayBlockingQueue<String>(2));
       toMaster.add(new ArrayBlockingQueue<String>(1));
       toProcess.add(new ArrayBlockingQueue<String>(1));
     }
   }
 
+  private boolean leaderFull () {
+    for (int i = 0; i < n; i++)
+      if (leader[i] == -9999) return false;
+    return true;
+  }
+
+  private void writeToProcess (int i, String message) {
+    try {
+      toProcess.get(i).put(message);
+    } catch (InterruptedException e) {
+      System.err.println("Master could not write to process " + i);
+      System.exit(0);
+    }
+  }
+
+  private String readFromProcess (int i) {
+    try {
+      return toMaster.get(i).take();
+    } catch (InterruptedException e) {
+      System.err.println("Master could not read from process " + i);
+      System.exit(0);
+      return "";
+    }
+  }
+
   public void start () {
     Thread [] processes = new Thread [n];
-    int left, right;
+    int left, right, leaderMessage;
 
     for (int i = 0; i < n; i++) {
       left = i == 0 ? n - 1 : i - 1;
@@ -221,13 +247,18 @@ public class HSAlgorithm {
       processes[i].start();
     }
 
-    // master code goes here!
-    // at this point, processes all exist!
+    do {
+      for (int i = 0; i < n; i++) {
+        if (leader[i] < 0) writeToProcess(i, "start round");
+      }
 
-    // to read from process i, use
-    // toMaster.get(i).take(); // returns a string
-    // to write to process i, use
-    // toProcess.get(i).put(data); // for some string `data` parameter
+      for (int i = 0; i < n; i++) {
+        if (leader[i] < 0) {
+          leaderMessage = Integer.parseInt(readFromProcess(i));
+          if (leaderMessage > -1) leader[i] = leaderMessage;
+        }
+      }
+    } while (!leaderFull());
   }
 
   public int getLeaderId () {
