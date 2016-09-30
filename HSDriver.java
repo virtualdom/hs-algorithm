@@ -4,12 +4,15 @@ import java.io.*;
 
 public class HSDriver {
   public static void main(String[] args) {
+
+    // Test inputs
     if (args.length != 2) {
       System.err.println("Correct usage:");
       System.err.println("Usage: java HSDriver <filename for n> <filename for ids>");
       return;
     }
 
+    // Read input files
     int leader = -9999;
     int n = 0;
     int [] ids;
@@ -40,6 +43,7 @@ public class HSDriver {
       }
     }
 
+    // Run HS Algorithm and get leader
     HSAlgorithm hs = new HSAlgorithm(n, ids);
     hs.start();
     leader = hs.getLeaderId();

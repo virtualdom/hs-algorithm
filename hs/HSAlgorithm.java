@@ -5,15 +5,9 @@ import java.util.ArrayList;
 import java.util.concurrent.ArrayBlockingQueue;
 
 public class HSAlgorithm {
-  int n = -1;
-  int [] ids;
-  int [] leader;
 
-  ArrayList<ArrayBlockingQueue<String>> toLeft;
-  ArrayList<ArrayBlockingQueue<String>> toRight;
-  ArrayList<ArrayBlockingQueue<String>> toMaster;
-  ArrayList<ArrayBlockingQueue<String>> toProcess;
-
+  // declare class for processes. Each process knows its ID and its
+  // index (for communicating with its neighbors)
   public class Process extends Thread {
     int id = -9999;
     int left = -1;
@@ -27,6 +21,8 @@ public class HSAlgorithm {
       this.index = index;
     }
 
+    // these functions are for communicating with neighbors
+    // and the master process
     private void writeToLeft (String message) {
       try {
         toLeft.get(left).put(message);
@@ -90,16 +86,17 @@ public class HSAlgorithm {
       }
     }
 
+    // This is executed for each process. The HS Algorithm can
+    // essentially be traced through the execution of this function
     @Override
     public void run () {
-      //Set up variables
       int phase = 0;
       String[] StrArrayFromLeft, StrArrayFromRight;
       String MessageForLeft = "",
         MessageForRight = "",
         ID = Integer.toString(this.id);
 
-      //First round to get started
+      // First round to get started
       readFromMaster();
 
       MessageForLeft =  ID + " out " + Integer.toString(1);
@@ -109,7 +106,8 @@ public class HSAlgorithm {
       writeToRight(MessageForRight);
       writeToMaster("-1");
 
-      //Until Termination section
+      // Repeatedly execute read/write with neighbors until
+      // a leader is found
       while(true)
       {
         readFromMaster();
@@ -190,6 +188,19 @@ public class HSAlgorithm {
       }
     }
   }
+  // End of process code.
+  // The remainder is related only to the master process.
+
+  int n = -1;
+  int [] ids;
+  int [] leader;
+
+  // Communication channels between process neighbors and
+  // between processes and master
+  ArrayList<ArrayBlockingQueue<String>> toLeft;
+  ArrayList<ArrayBlockingQueue<String>> toRight;
+  ArrayList<ArrayBlockingQueue<String>> toMaster;
+  ArrayList<ArrayBlockingQueue<String>> toProcess;
 
   public HSAlgorithm (int n, int [] ids) {
     this.n = n;
@@ -211,12 +222,15 @@ public class HSAlgorithm {
     }
   }
 
+  // Determines if all processes have elected a leader,
+  // which is useful for determining termination
   private boolean leaderFull () {
     for (int i = 0; i < n; i++)
       if (leader[i] == -9999) return false;
     return true;
   }
 
+  // These functions are for communicating with child processes
   private void writeToProcess (int i, String message) {
     try {
       toProcess.get(i).put(message);
@@ -236,6 +250,10 @@ public class HSAlgorithm {
     }
   }
 
+  // Master process tasks are detailed below
+  // - start all processes
+  // - start each round to keep processes in synchrony
+  // - determine with a leader has been chosen
   public void start () {
     Thread [] processes = new Thread [n];
     int left, right, leaderMessage;
